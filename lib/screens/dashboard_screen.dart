@@ -29,8 +29,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     'Health': Icons.local_hospital,
   };
 
-  PigState _pigState = PigState.idle;
-
   /// Shows a full-screen animated popup: Lottie above pig image, scales in.
   void _showAnimatedPig(PigState state) {
     final pigAsset = state == PigState.happy
@@ -72,7 +70,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
-      setState(() => _pigState = PigState.idle);
     });
   }
 

@@ -12,7 +12,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // BALANCE
   bool _budgetMode = false;
   bool _carryOver = false;
-  bool _futureRecurring = false;
 
   // GENERAL SETTINGS
   bool _darkTheme = false;
@@ -28,7 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     return Scaffold(
       body: ListView(
         children: [
@@ -57,7 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SwitchListTile(
             title: const Text('Dark theme'),
             value: _darkTheme,
-            onChanged: (v) => setState(() => _darkTheme = v!),
+            onChanged: (v) => setState(() => _darkTheme = v),
           ),
           _navItem(
             title: 'Language',
@@ -90,7 +89,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SwitchListTile(
             title: const Text('Passcode protection'),
             value: _passcodeProtection,
-            onChanged: (v) => setState(() => _passcodeProtection = v!),
+            onChanged: (v) => setState(() => _passcodeProtection = v),
           ),
           ListTile(
             leading: const Icon(Icons.thumb_up_alt_outlined),

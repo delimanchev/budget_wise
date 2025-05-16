@@ -136,8 +136,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             e.date.isAfter(_selectedInterval!.start.subtract(const Duration(seconds: 1))) &&
             e.date.isBefore(_selectedInterval!.end.add(const Duration(days: 1)))).toList();
       case ExpenseFilter.all:
-      default:
-        return _allExpenses;
+      return _allExpenses;
     }
   }
 
