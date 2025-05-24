@@ -1,32 +1,35 @@
 // lib/screens/signup_screen.dart
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_service.dart';
 import 'login_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({Key? key}) : super(key: key);
-
-  @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  const SignUpScreen({super.key});
+  @override State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailCtrl = TextEditingController();
-  final TextEditingController _passwordCtrl = TextEditingController();
-  final TextEditingController _confirmCtrl = TextEditingController();
+  final _formKey    = GlobalKey<FormState>();
+  final _emailCtrl  = TextEditingController();
+  final _passCtrl   = TextEditingController();
+  final _confirmCtrl= TextEditingController();
   bool _loading = false;
 
-  void _signup() async {
+  Future<void> _signup() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    // TODO: integrate sign-up logic
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _loading = false);
-    // After sign up, navigate back to login
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
+    try {
+      await AuthService.instance
+        .signUp(_emailCtrl.text.trim(), _passCtrl.text);
+      Navigator.pushReplacementNamed(context, '/login');
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? 'Sign up failed'))
+      );
+    } finally {
+      setState(() => _loading = false);
+    }
   }
 
   @override
@@ -37,49 +40,40 @@ class _SignUpScreenState extends State<SignUpScreen> {
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextFormField(
-                controller: _emailCtrl,
-                decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-                validator: (v) => v != null && v.contains('@') ? null : 'Enter valid email',
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _passwordCtrl,
-                decoration: const InputDecoration(labelText: 'Password'),
-                obscureText: true,
-                validator: (v) => v != null && v.length >= 6 ? null : 'Min 6 chars',
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _confirmCtrl,
-                decoration: const InputDecoration(labelText: 'Confirm Password'),
-                obscureText: true,
-                validator: (v) => v == _passwordCtrl.text ? null : 'Passwords do not match',
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _loading ? null : _signup,
-                  child: _loading ? const CircularProgressIndicator() : const Text('Create Account'),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  );
-                },
-                child: const Text('Already have an account? Sign In'),
-              ),
-            ],
-          ),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            TextFormField(
+              controller: _emailCtrl,
+              decoration: const InputDecoration(labelText: 'Email'),
+              validator: (v) => v != null && v.contains('@') ? null : 'Enter a valid email',
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _passCtrl,
+              decoration: const InputDecoration(labelText: 'Password'),
+              obscureText: true,
+              validator: (v) => v != null && v.length >= 6 ? null : 'Min 6 characters',
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _confirmCtrl,
+              decoration: const InputDecoration(labelText: 'Confirm Password'),
+              obscureText: true,
+              validator: (v) =>
+                v == _passCtrl.text ? null : 'Passwords do not match',
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _loading ? null : _signup,
+              child: _loading
+                ? const CircularProgressIndicator()
+                : const Text('Create Account'),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+              child: const Text('Already have an account? Sign In'),
+            ),
+          ]),
         ),
       ),
     );

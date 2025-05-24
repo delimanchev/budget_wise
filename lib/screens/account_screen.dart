@@ -1,6 +1,7 @@
 // lib/screens/account_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // for Clipboard if needed
+import 'package:flutter/services.dart'; // for Clipboard
+import '../services/auth_service.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({Key? key}) : super(key: key);
@@ -12,10 +13,8 @@ class AccountScreen extends StatefulWidget {
 class _AccountScreenState extends State<AccountScreen> {
   final String _userName = 'Andrej Delimanchev';
   final String _userEmail = 'andrej.delimanchev@student.um.si';
-
   final double _totalIncome = 5230.75;
   final double _totalExpenses = 4120.40;
-
   bool _darkTheme = false;
 
   @override
@@ -31,16 +30,20 @@ class _AccountScreenState extends State<AccountScreen> {
                 radius: 40,
                 backgroundColor: Colors.lightBlueAccent,
                 child: Text(
-                  _userName.substring(0,1),
+                  _userName.substring(0, 1),
                   style: const TextStyle(fontSize: 32, color: Colors.white),
                 ),
               ),
               const SizedBox(height: 12),
-              Text(_userName,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text(
+                _userName,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 4),
-              Text(_userEmail,
-                  style: TextStyle(color: Colors.grey.shade700)),
+              Text(
+                _userEmail,
+                style: TextStyle(color: Colors.grey.shade700),
+              ),
             ],
           ),
         ),
@@ -63,8 +66,9 @@ class _AccountScreenState extends State<AccountScreen> {
               child: OutlinedButton.icon(
                 icon: const Icon(Icons.logout),
                 label: const Text('Log Out'),
-                onPressed: () {
-                  // TODO: perform logout
+                onPressed: () async {
+                  await AuthService.instance.signOut();
+                  // no further navigation needed—AuthGate will show LoginScreen
                 },
               ),
             ),
@@ -78,21 +82,20 @@ class _AccountScreenState extends State<AccountScreen> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                const Text('Account Summary',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Account Summary',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.arrow_circle_down, color: Colors.green),
                   title: const Text('Total Income'),
-                  trailing:
-                      Text('€${_totalIncome.toStringAsFixed(2)}'),
+                  trailing: Text('€${_totalIncome.toStringAsFixed(2)}'),
                 ),
                 ListTile(
                   leading: const Icon(Icons.arrow_circle_up, color: Colors.red),
                   title: const Text('Total Expenses'),
-                  trailing:
-                      Text('€${_totalExpenses.toStringAsFixed(2)}'),
+                  trailing: Text('€${_totalExpenses.toStringAsFixed(2)}'),
                 ),
               ],
             ),
@@ -107,9 +110,10 @@ class _AccountScreenState extends State<AccountScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Preferences',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Preferences',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
                 SwitchListTile(
                   title: const Text('Dark Theme'),
                   value: _darkTheme,
