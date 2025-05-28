@@ -1,8 +1,8 @@
-// lib/screens/dashboard_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:lottie/lottie.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/expense.dart';
 import '../models/category.dart';
@@ -19,6 +19,28 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   PigState _pigState = PigState.idle;
+  DateTime _selectedMonth = DateTime.now();
+  bool _budgetMode = false;
+  double _dailyBudget = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBudgetInfo();
+  }
+
+  Future<void> _loadBudgetInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _budgetMode = prefs.getBool('budgetMode') ?? false;
+      final monthly = prefs.getDouble('monthlyBudget') ?? 0;
+      if (_budgetMode && monthly > 0) {
+        final now = DateTime.now();
+        final daysInMonth = DateUtils.getDaysInMonth(now.year, now.month);
+        _dailyBudget = monthly / daysInMonth;
+      }
+    });
+  }
 
   void _showAnimatedPig(PigState state) {
     final pigAsset  = state == PigState.happy ? 'assets/images/pig_happy.png'  : 'assets/images/pig_sad.png';
@@ -75,14 +97,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Stream your live categories here:
             StreamBuilder<List<Category>>(
               stream: FirestoreService.instance.watchCategories(),
               builder: (cCtx, snapC) {
                 if (snapC.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                // Filter by income vs expense
                 final cats = (snapC.data ?? [])
                     .where((c) => c.isIncome == isIncome)
                     .toList();
@@ -94,7 +114,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Text(c.name),
                   )).toList(),
                   onChanged: (v) => selectedCategory = v,
-                  validator: (v) => v == null ? 'Select a category' : null,
                 );
               },
             ),
@@ -138,152 +157,177 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _changeMonth(int months) {
+    setState(() {
+      _selectedMonth = DateTime(
+        _selectedMonth.year,
+        _selectedMonth.month + months,
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final monthLabel = DateFormat.yMMMM().format(_selectedMonth);
+
     return Scaffold(
       appBar: AppBar(title: const Text('BudgetWise'), centerTitle: true),
-      body: StreamBuilder<List<Category>>(
-        // First layer: load your categories
-        stream: FirestoreService.instance.watchCategories(),
-        builder: (ctxCat, snapCat) {
-          if (snapCat.connectionState != ConnectionState.active) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final allCats = snapCat.data ?? [];
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(icon: const Icon(Icons.chevron_left), onPressed: () => _changeMonth(-1)),
+                Text(monthLabel, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  onPressed: () {
+                    final now = DateTime.now();
+                    if (!(_selectedMonth.year == now.year && _selectedMonth.month == now.month)) {
+                      _changeMonth(1);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
 
-          // Extract expense-only category names
-          final expenseCats = allCats.where((c) => !c.isIncome).toList();
+          Expanded(
+            child: StreamBuilder<List<Expense>>(
+              stream: FirestoreService.instance.watchExpenses(),
+              builder: (ctxE, snapE) {
+                if (snapE.connectionState != ConnectionState.active) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final allExp = snapE.data ?? [];
+                final expenses = allExp.where((e) => e.date.year == _selectedMonth.year && e.date.month == _selectedMonth.month).toList();
 
-          return StreamBuilder<List<Expense>>(
-            stream: FirestoreService.instance.watchExpenses(),
-            builder: (ctxE, snapE) {
-              if (snapE.connectionState != ConnectionState.active) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final expenses = snapE.data ?? [];
+                return StreamBuilder<List<Expense>>(
+                  stream: FirestoreService.instance.watchIncomes(),
+                  builder: (ctxI, snapI) {
+                    if (snapI.connectionState != ConnectionState.active) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final allInc = snapI.data ?? [];
+                    final incomes = allInc.where((e) => e.date.year == _selectedMonth.year && e.date.month == _selectedMonth.month).toList();
 
-              return StreamBuilder<List<Expense>>(
-                stream: FirestoreService.instance.watchIncomes(),
-                builder: (ctxI, snapI) {
-                  if (snapI.connectionState != ConnectionState.active) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final incomes = snapI.data ?? [];
+                    final totalExp = expenses.fold(0.0, (s, e) => s + e.amount);
+                    final totalInc = incomes.fold(0.0, (s, e) => s + e.amount);
+                    final balance  = totalInc - totalExp;
 
-                  // Totals
-                  final totalExp = expenses.fold(0.0, (s,e) => s + e.amount);
-                  final totalInc = incomes.fold(0.0, (s,e) => s + e.amount);
-                  final balance  = totalInc - totalExp;
+                    return StreamBuilder<List<Category>>(
+                      stream: FirestoreService.instance.watchCategories(),
+                      builder: (ctxC, snapC) {
+                        if (snapC.connectionState != ConnectionState.active) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        final cats = (snapC.data ?? []).where((c) => !c.isIncome).toList();
+                        final sums = cats.map((cat) =>
+                          expenses.where((e) => e.category == cat.name).fold<double>(0, (s, e) => s + e.amount)).toList();
 
-                  // Per-category sums
-                  final sums = expenseCats.map((cat) {
-                    return expenses
-                        .where((e) => e.category == cat.name)
-                        .fold<double>(0, (s, e) => s + e.amount);
-                  }).toList();
+                        final sections = <PieChartSectionData>[];
+                        final icons    = <Widget>[];
 
-                  // Build pie sections & icon columns
-                  final sections = <PieChartSectionData>[];
-                  final icons    = <Widget>[];
+                        for (var i = 0; i < cats.length; i++) {
+                          final cat   = cats[i];
+                          final value = sums[i];
+                          final color = Colors.primaries[i % Colors.primaries.length];
 
-                  for (var i = 0; i < expenseCats.length; i++) {
-                    final cat = expenseCats[i];
-                    final value = sums[i];
-                    final color = Colors.primaries[i % Colors.primaries.length];
+                          sections.add(PieChartSectionData(
+                            value    : value,
+                            color    : color,
+                            radius   : 40,
+                            showTitle: false,
+                          ));
 
-                    // pie slice
-                    sections.add(PieChartSectionData(
-                      value    : value,
-                      color    : color,
-                      radius   : 40,
-                      showTitle: false,
-                    ));
+                          icons.add(Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(cat.iconData, size: 32, color: color),
+                              const SizedBox(height: 4),
+                              Text(cat.name, style: TextStyle(fontSize: 12, color: color)),
+                              Text('€${value.toStringAsFixed(2)}', style: TextStyle(fontSize: 12, color: color)),
+                            ],
+                          ));
+                        }
 
-                    // icon + label + sum
-                    icons.add(Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(cat.iconData, size: 32, color: color),
-                        const SizedBox(height: 4),
-                        Text(cat.name, style: TextStyle(fontSize: 12, color: color)),
-                        Text('€${value.toStringAsFixed(2)}',
-                            style: TextStyle(fontSize: 12, color: color)),
-                      ],
-                    ));
-                  }
-
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Column(children: [
-                      // balance text
-                      Text(
-                        'Balance: €${balance.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize   : 24,
-                          fontWeight : FontWeight.bold,
-                          color      : balance >= 0 ? Colors.green : Colors.red,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // pie chart + pig
-                      SizedBox(
-                        width : 260, height: 260,
-                        child: Stack(alignment: Alignment.center, children: [
-                          PieChart(PieChartData(sections: sections, centerSpaceRadius: 80)),
-                          Image.asset('assets/images/pig_idle.png', width: 120),
-                        ]),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // dynamic icons under chart
-                      Wrap(spacing: 24, runSpacing: 16, alignment: WrapAlignment.center, children: icons),
-
-                      const SizedBox(height: 32),
-
-                      // add expense/income buttons
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 48),
-                        child: Row(children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                              ),
-                              onPressed: () => _addTransaction(isIncome: false),
-                              child: Icon(Icons.remove, size: 32, color: Theme.of(context).colorScheme.primary),
+                        return SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Column(children: [
+                            Column(
+                              children: [
+                                Text(
+                                  'Balance: €${balance.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: balance >= 0 ? Colors.green : Colors.red,
+                                  ),
+                                ),
+                                if (_budgetMode && _dailyBudget > 0)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: Text(
+                                      'Budget: €${_dailyBudget.toStringAsFixed(2)} / day',
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                                    ),
+                                  ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 24),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                              ),
-                              onPressed: () => _addTransaction(isIncome: true),
-                              child: Icon(Icons.add, size: 32, color: Theme.of(context).colorScheme.primary),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width : 260, height: 260,
+                              child: Stack(alignment: Alignment.center, children: [
+                                PieChart(PieChartData(sections: sections, centerSpaceRadius: 80)),
+                                Image.asset('assets/images/pig_idle.png', width: 120),
+                              ]),
                             ),
-                          ),
-                        ]),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // totals at bottom
-                      Text('Income this month: €${totalInc.toStringAsFixed(2)}',
-                          style: const TextStyle(fontSize: 16, color: Colors.green)),
-                      Text('Expenses this month: €${totalExp.toStringAsFixed(2)}',
-                          style: const TextStyle(fontSize: 16, color: Colors.red)),
-                    ]),
-                  );
-                },
-              );
-            },
-          );
-        },
+                            const SizedBox(height: 24),
+                            Wrap(spacing: 24, runSpacing: 16, alignment: WrapAlignment.center, children: icons),
+                            const SizedBox(height: 32),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 48),
+                              child: Row(children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                    ),
+                                    onPressed: () => _addTransaction(isIncome: false),
+                                    child: Icon(Icons.remove, size: 32, color: Theme.of(context).colorScheme.primary),
+                                  ),
+                                ),
+                                const SizedBox(width: 24),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                    ),
+                                    onPressed: () => _addTransaction(isIncome: true),
+                                    child: Icon(Icons.add, size: 32, color: Theme.of(context).colorScheme.primary),
+                                  ),
+                                ),
+                              ]),
+                            ),
+                            const SizedBox(height: 16),
+                            Text('Income this month: €${totalInc.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, color: Colors.green)),
+                            Text('Expenses this month: €${totalExp.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, color: Colors.red)),
+                          ]),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

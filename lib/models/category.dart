@@ -1,5 +1,3 @@
-// lib/models/category.dart
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -16,7 +14,6 @@ class Category {
     required this.isIncome,
   });
 
-  /// Build from a Firestore document snapshot
   factory Category.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
     return Category(

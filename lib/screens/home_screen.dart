@@ -1,4 +1,3 @@
-// lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'dashboard_screen.dart';
 import 'category_screen.dart';
@@ -13,7 +12,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Dashboard in the center
   int _selectedIndex = 2;
   static const List<Widget> _pages = [
     CategoryScreen(),
@@ -35,7 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Light blue accent header
       appBar: AppBar(
         backgroundColor: Colors.lightBlueAccent,
         title: Text(

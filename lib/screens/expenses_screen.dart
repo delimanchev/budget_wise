@@ -1,9 +1,7 @@
-// lib/screens/expenses_screen.dart
 import 'package:flutter/material.dart';
 import '../models/expense.dart';
 import '../services/firestore_service.dart';
 
-/// Types of filters available
 enum ExpenseFilter {
   day,
   week,
@@ -83,7 +81,6 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     }
   }
 
-  /// Applies the selected filter to a list of expenses
   List<Expense> _applyFilter(List<Expense> all) {
     final now = DateTime.now();
     switch (_selectedFilter) {
@@ -130,7 +127,6 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Filter bar
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
@@ -151,7 +147,6 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           ),
         ),
 
-        // Expenses list driven by Firestore stream
         Expanded(
           child: StreamBuilder<List<Expense>>(
             stream: FirestoreService.instance.watchExpenses(),

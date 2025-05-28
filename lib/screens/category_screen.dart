@@ -1,5 +1,3 @@
-// lib/screens/category_screen.dart
-
 import 'package:flutter/material.dart';
 import '../models/category.dart';
 import '../services/firestore_service.dart';
@@ -11,7 +9,6 @@ class CategoryScreen extends StatefulWidget {
 }
 
 class _CategoryScreenState extends State<CategoryScreen> {
-  /// Your built-in defaults
   final _initialDefaults = <Category>[
     Category(id: '', name: 'Salary',       iconData: Icons.attach_money,   isIncome: true),
     Category(id: '', name: 'Investments',  iconData: Icons.trending_up,    isIncome: true),
@@ -36,7 +33,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
           }
           var cats = snap.data ?? [];
 
-          // Seed defaults once if empty
           if (!_didSeedDefaults && cats.isEmpty) {
             _didSeedDefaults = true;
             for (var c in _initialDefaults) {
@@ -45,7 +41,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
             cats = _initialDefaults;
           }
 
-          // Split into income vs expense
           final incomes  = cats.where((c) => c.isIncome).toList();
           final expenses = cats.where((c) => !c.isIncome).toList();
 
@@ -83,7 +78,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
         },
       ),
 
-      // TWO FABs: one for income, one for expense
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
