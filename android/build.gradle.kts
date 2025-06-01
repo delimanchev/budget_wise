@@ -21,15 +21,15 @@ allprojects {
 }
 
 // Optional: redirect build outputs
-val newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get()
-rootProject.layout.buildDirectory.set(newBuildDir)
-
-subprojects {
-  val subBuild = newBuildDir.dir(project.name)
-  project.layout.buildDirectory.set(subBuild)
-  evaluationDependsOn(":app")
-}
-
-tasks.register<Delete>("clean") {
-  delete(rootProject.layout.buildDirectory)
-}
+//val newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get()
+//rootProject.layout.buildDirectory.set(newBuildDir)
+//
+//subprojects {
+//  val subBuild = newBuildDir.dir(project.name)
+//  project.layout.buildDirectory.set(subBuild)
+//  evaluationDependsOn(":app")
+//}
+//
+//tasks.register<Delete>("clean") {
+//  delete(rootProject.layout.buildDirectory)
+//}

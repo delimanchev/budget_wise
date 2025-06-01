@@ -11,21 +11,16 @@ dependencies:
     sdk: flutter
   intl: ^0.18.0
   shared_preferences: ^2.2.2
-
-
-  firebase_core: ^2.8.0
-  cloud_firestore: ^4.5.0
-  firebase_auth: ^4.4.0
-
+  firebase_core: ^2.27.0
+  cloud_firestore: ^4.15.8
+  firebase_auth: ^4.17.0
   fl_chart: ^1.0.0
   lottie: ^3.3.1
-  
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
-
 
 flutter:
   uses-material-design: true
@@ -37,4 +32,3 @@ flutter:
     - assets/images/pig_sad.png
     - assets/animations/coins.json
     - assets/animations/cloud_rain.json
-

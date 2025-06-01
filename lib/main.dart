@@ -9,7 +9,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/category_screen.dart';
 import 'screens/expenses_screen.dart';
 import 'screens/settings_screen.dart';
-import 'screens/account_screen.dart';  // assume you have this
+import 'screens/account_screen.dart'; // assume you have this
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,7 +43,7 @@ class BudgetWiseApp extends StatelessWidget {
         },
       ),
       routes: {
-        '/login':  (_) => const LoginScreen(),
+        '/login': (_) => const LoginScreen(),
         '/signup': (_) => const SignUpScreen(),
       },
     );
@@ -63,7 +63,7 @@ class _RootScreenState extends State<RootScreen> {
     const DashboardScreen(),
     const CategoryScreen(),
     const ExpensesScreen(),
-    const AccountScreen(),   // create this if you haven't
+    const AccountScreen(), // create this if you haven't
     const SettingsScreen(),
   ];
 

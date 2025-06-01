@@ -1,6 +1,7 @@
 // android/app/build.gradle.kts
 plugins {
     id("com.android.application")
+    id("com.google.gms.google-services")
     kotlin("android")
     id("dev.flutter.flutter-gradle-plugin")
     // Note: Do NOT include com.google.gms.google-services here
@@ -40,8 +41,9 @@ android {
 
 // Dependencies should be outside android {}
 dependencies {
-    implementation("com.google.firebase:firebase-auth-ktx:22.1.1")
-    implementation("com.google.firebase:firebase-firestore-ktx:24.7.0")
+    //implementation("com.google.firebase:firebase-auth-ktx:22.1.1")
+    //implementation("com.google.firebase:firebase-firestore-ktx:24.7.0")
+    implementation(platform("com.google.firebase:firebase-bom:33.14.0"))
 }
 
 flutter {
