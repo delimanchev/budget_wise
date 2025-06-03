@@ -1,16 +1,26 @@
-# budget_wise
+# 💸 BudgetWise
 
-A new Flutter project.
+BudgetWise is a Flutter application for managing personal finances. Users can sign up, log in, add income and expenses, view summaries, and categorize transactions. The app uses Firebase for authentication and Firestore for data storage.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 🚀 Features
 
-A few resources to get you started if this is your first Flutter project:
+- Firebase Authentication (Email/Password)
+- Cloud Firestore for storing user-specific financial data
+- Beautiful UI with animations using Lottie
+- Real-time updates and persistent sessions
+- Modular structure (screens, services, etc.)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🧪 How to Set Up and Run the App (Including Firebase)
+
+1. **Clone the project and get dependencies**:
+
+git clone
+cd budgetwise
+flutter pub get
+flutterfire configure
+flutter run -d chrome       # Web
+flutter run -d android      # Android
