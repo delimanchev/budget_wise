@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'services/auth_service.dart';
+import 'services/firestore_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/category_screen.dart';
 import 'screens/expenses_screen.dart';
 import 'screens/settings_screen.dart';
-import 'screens/account_screen.dart'; // assume you have this
+import 'screens/account_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,14 +40,31 @@ class BudgetWiseApp extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          return snap.hasData ? const RootScreen() : const LoginScreen();
+          return FutureBuilder(
+            future: _initializeAppLogic(snap.data),
+            builder: (context, initSnap) {
+              if (initSnap.connectionState != ConnectionState.done) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+              return snap.hasData ? const RootScreen() : const LoginScreen();
+            },
+          );
         },
       ),
       routes: {
         '/login': (_) => const LoginScreen(),
         '/signup': (_) => const SignUpScreen(),
+        '/home': (_) => const RootScreen(),
       },
     );
+  }
+
+  Future<void> _initializeAppLogic(User? user) async {
+    if (user != null) {
+      await FirestoreService.instance.getCategoriesOnce();
+    }
   }
 }
 
@@ -63,7 +81,7 @@ class _RootScreenState extends State<RootScreen> {
     const DashboardScreen(),
     const CategoryScreen(),
     const ExpensesScreen(),
-    const AccountScreen(), // create this if you haven't
+    const AccountScreen(),
     const SettingsScreen(),
   ];
 
@@ -85,14 +103,10 @@ class _RootScreenState extends State<RootScreen> {
         ),
         backgroundColor: Colors.lightBlueAccent,
         actions: [
-          // help icon
           IconButton(
             icon: const Icon(Icons.help_outline),
-            onPressed: () {
-              // TODO: show help dialog
-            },
+            onPressed: () {},
           ),
-          // optional logout
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => AuthService.instance.signOut(),

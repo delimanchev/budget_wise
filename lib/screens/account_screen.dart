@@ -376,11 +376,6 @@ class _AccountScreenState extends State<AccountScreen> {
                         trailing: const Text('1.0.0'),
                       ),
                       ListTile(
-                        leading: const Icon(Icons.system_update_alt),
-                        title: const Text('Check for Updates'),
-                        onTap: () {},
-                      ),
-                      ListTile(
                         leading: const Icon(Icons.copy_outlined),
                         title: const Text('Copy User ID'),
                         onTap: () {
