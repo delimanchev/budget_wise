@@ -78,6 +78,19 @@ class FirestoreService {
     });
   }
 
+  Future<void> createUserIfNotExists(User user) async {
+    final docRef = _db.collection('users').doc(user.uid);
+    final doc = await docRef.get();
+
+    if (!doc.exists) {
+      await docRef.set({
+        'email': user.email,
+        'name': user.displayName ?? '',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+
   Future<void> deleteCategory(String id) {
     final uid = FirebaseAuth.instance.currentUser!.uid;
     return _userCol(uid, 'categories').doc(id).delete();

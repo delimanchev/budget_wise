@@ -21,7 +21,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     try {
       await AuthService.instance.signUp(_emailCtrl.text.trim(), _passCtrl.text);
 
-      // Wait for auth state to update
       FirebaseAuth.instance
           .authStateChanges()
           .firstWhere((user) => user != null)
@@ -31,6 +30,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message ?? 'Sign up failed')),
+      );
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _signupWithGoogle() async {
+    setState(() => _loading = true);
+    try {
+      final user = await AuthService.instance.signInWithGoogle();
+      if (user != null) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Google sign-in failed')),
       );
     } finally {
       setState(() => _loading = false);
@@ -76,8 +91,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   : const Text('Create Account'),
             ),
             const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.login),
+              label: const Text("Register with Google"),
+              onPressed: _loading ? null : _signupWithGoogle,
+            ),
+            const SizedBox(height: 16),
             TextButton(
-              onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
+              onPressed: () =>
+                  Navigator.pushReplacementNamed(context, '/login'),
               child: const Text('Already have an account? Sign In'),
             ),
           ]),

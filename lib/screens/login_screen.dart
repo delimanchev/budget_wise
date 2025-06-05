@@ -40,6 +40,22 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _loginWithGoogle() async {
+    setState(() => _loading = true);
+    try {
+      await AuthService.instance.signInWithGoogle();
+
+      await FirestoreService.instance.getCategoriesOnce();
+
+      Navigator.pushReplacementNamed(context, '/home');
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Google sign-in failed')));
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,6 +85,25 @@ class _LoginScreenState extends State<LoginScreen> {
               child: _loading
                   ? const CircularProgressIndicator()
                   : const Text('Sign In'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.login),
+              label: const Text('Log in with Google'),
+              onPressed: () async {
+                setState(() => _loading = true);
+                final userCred = await AuthService.instance.signInWithGoogle();
+                setState(() => _loading = false);
+
+                if (userCred != null) {
+                  Navigator.pushReplacementNamed(context, '/home');
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Google sign-in cancelled or failed')),
+                  );
+                }
+              },
             ),
             const SizedBox(height: 16),
             TextButton(
