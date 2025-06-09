@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/expense.dart';
 import '../models/category.dart';
+import 'encryption_service.dart';
 
 class FirestoreService {
   FirestoreService._();
@@ -16,9 +17,9 @@ class FirestoreService {
   Future<void> addExpense(Expense e) {
     final uid = FirebaseAuth.instance.currentUser!.uid;
     return _userCol(uid, 'expenses').add({
-      'amount': e.amount,
-      'category': e.category,
-      'description': e.description,
+      'amount': EncryptionService.encryptText(e.amount.toString()),
+      'category': EncryptionService.encryptText(e.category),
+      'description': EncryptionService.encryptText(e.description),
       'date': e.date.toIso8601String(),
       'userId': uid,
     });
@@ -29,23 +30,32 @@ class FirestoreService {
     return _userCol(uid, 'expenses')
         .orderBy('date', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map((doc) {
+        .map((snap) => snap.docs
+            .map((doc) {
               final d = doc.data();
-              return Expense(
-                amount: (d['amount'] as num).toDouble(),
-                category: d['category'] as String,
-                description: d['description'] as String,
-                date: DateTime.parse(d['date'] as String),
-              );
-            }).toList());
+              try {
+                return Expense(
+                  amount:
+                      double.parse(EncryptionService.decryptText(d['amount'])),
+                  category: EncryptionService.decryptText(d['category']),
+                  description: EncryptionService.decryptText(d['description']),
+                  date: DateTime.parse(d['date'] as String),
+                );
+              } catch (e) {
+                print('Greška prilikom dekripcije expense: $e');
+                return null;
+              }
+            })
+            .whereType<Expense>()
+            .toList());
   }
 
   Future<void> addIncome(Expense e) {
     final uid = FirebaseAuth.instance.currentUser!.uid;
     return _userCol(uid, 'incomes').add({
-      'amount': e.amount,
-      'category': e.category,
-      'description': e.description,
+      'amount': EncryptionService.encryptText(e.amount.toString()),
+      'category': EncryptionService.encryptText(e.category),
+      'description': EncryptionService.encryptText(e.description),
       'date': e.date.toIso8601String(),
       'userId': uid,
     });
@@ -56,15 +66,24 @@ class FirestoreService {
     return _userCol(uid, 'incomes')
         .orderBy('date', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map((doc) {
+        .map((snap) => snap.docs
+            .map((doc) {
               final d = doc.data();
-              return Expense(
-                amount: (d['amount'] as num).toDouble(),
-                category: d['category'] as String,
-                description: d['description'] as String,
-                date: DateTime.parse(d['date'] as String),
-              );
-            }).toList());
+              try {
+                return Expense(
+                  amount:
+                      double.parse(EncryptionService.decryptText(d['amount'])),
+                  category: EncryptionService.decryptText(d['category']),
+                  description: EncryptionService.decryptText(d['description']),
+                  date: DateTime.parse(d['date'] as String),
+                );
+              } catch (e) {
+                print('Greška prilikom dekripcije income: $e');
+                return null;
+              }
+            })
+            .whereType<Expense>()
+            .toList());
   }
 
   Future<void> addCategory(Category c) {

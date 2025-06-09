@@ -63,6 +63,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '133939376227',
     projectId: 'budget-wise-81413',
     storageBucket: 'budget-wise-81413.firebasestorage.app',
+    androidClientId: '133939376227-sjls6gefd47cdrfrlo9rne82b6luv0od.apps.googleusercontent.com',
+    iosClientId: '133939376227-s0t61t1cfufuk460pj6ek10po271mrhm.apps.googleusercontent.com',
     iosBundleId: 'com.example.budgetWise',
   );
 
@@ -72,6 +74,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '133939376227',
     projectId: 'budget-wise-81413',
     storageBucket: 'budget-wise-81413.firebasestorage.app',
+    androidClientId: '133939376227-sjls6gefd47cdrfrlo9rne82b6luv0od.apps.googleusercontent.com',
+    iosClientId: '133939376227-s0t61t1cfufuk460pj6ek10po271mrhm.apps.googleusercontent.com',
     iosBundleId: 'com.example.budgetWise',
   );
 
