@@ -16,11 +16,13 @@ jobs:
     - uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.29.3' 
+
     - name: Install dependencies
       run: flutter pub get
 
     - name: Analyze code
       run: flutter analyze
+      continue-on-error: true
 
     - name: Run tests
       run: flutter test

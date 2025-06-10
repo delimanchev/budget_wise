@@ -40,21 +40,21 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _loginWithGoogle() async {
-    setState(() => _loading = true);
-    try {
-      await AuthService.instance.signInWithGoogle();
+  // Future<void> _loginWithGoogle() async {
+  // setState(() => _loading = true);
+  // try {
+  // await AuthService.instance.signInWithGoogle();
 
-      await FirestoreService.instance.getCategoriesOnce();
+//       await FirestoreService.instance.getCategoriesOnce();
 
-      Navigator.pushReplacementNamed(context, '/home');
-    } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'Google sign-in failed')));
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
+  //    Navigator.pushReplacementNamed(context, '/home');
+  // } on FirebaseAuthException catch (e) {
+  // ScaffoldMessenger.of(context).showSnackBar(
+  //  SnackBar(content: Text(e.message ?? 'Google sign-in failed')));
+  //  } finally {
+  // setState(() => _loading = false);
+  //  }
+  // }
 
   @override
   Widget build(BuildContext context) {

@@ -27,6 +27,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('Initial pig state: $_pigState');
     _loadBudgetInfo();
     _preloadCategories();
     FirestoreService.instance.getCategoriesOnce();
