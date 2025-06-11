@@ -299,6 +299,7 @@ class _AccountScreenState extends State<AccountScreen> {
                       label: const Text('Log Out'),
                       onPressed: () async {
                         await AuthService.instance.signOut();
+                        Navigator.pushReplacementNamed(context, '/login');
                       },
                     ),
                   ),

@@ -11,12 +11,23 @@ class FirestoreService {
 
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  // Helper koji uvek sigurno vrati UID (čeka da FirebaseAuth završi učitavanje)
+  Future<String> getCurrentUid() async {
+    var user = FirebaseAuth.instance.currentUser;
+    if (user != null) return user.uid;
+    user = await FirebaseAuth.instance
+        .authStateChanges()
+        .firstWhere((u) => u != null);
+    return user!.uid;
+  }
+
   CollectionReference<Map<String, dynamic>> _userCol(String uid, String col) =>
       _db.collection('users').doc(uid).collection(col);
 
-  Future<void> addExpense(Expense e) {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    return _userCol(uid, 'expenses').add({
+  // Dodavanje Expense
+  Future<void> addExpense(Expense e) async {
+    final uid = await getCurrentUid();
+    await _userCol(uid, 'expenses').add({
       'amount': EncryptionService.encryptText(e.amount.toString()),
       'category': EncryptionService.encryptText(e.category),
       'description': EncryptionService.encryptText(e.description),
@@ -25,9 +36,10 @@ class FirestoreService {
     });
   }
 
-  Stream<List<Expense>> watchExpenses() {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    return _userCol(uid, 'expenses')
+  // Praćenje Expense streama
+  Stream<List<Expense>> watchExpenses() async* {
+    final uid = await getCurrentUid();
+    yield* _userCol(uid, 'expenses')
         .orderBy('date', descending: true)
         .snapshots()
         .map((snap) => snap.docs
@@ -50,9 +62,10 @@ class FirestoreService {
             .toList());
   }
 
-  Future<void> addIncome(Expense e) {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    return _userCol(uid, 'incomes').add({
+  // Dodavanje Income
+  Future<void> addIncome(Expense e) async {
+    final uid = await getCurrentUid();
+    await _userCol(uid, 'incomes').add({
       'amount': EncryptionService.encryptText(e.amount.toString()),
       'category': EncryptionService.encryptText(e.category),
       'description': EncryptionService.encryptText(e.description),
@@ -61,9 +74,10 @@ class FirestoreService {
     });
   }
 
-  Stream<List<Expense>> watchIncomes() {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    return _userCol(uid, 'incomes')
+  // Praćenje Income streama
+  Stream<List<Expense>> watchIncomes() async* {
+    final uid = await getCurrentUid();
+    yield* _userCol(uid, 'incomes')
         .orderBy('date', descending: true)
         .snapshots()
         .map((snap) => snap.docs
@@ -86,9 +100,10 @@ class FirestoreService {
             .toList());
   }
 
-  Future<void> addCategory(Category c) {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    return _userCol(uid, 'categories').add({
+  // Dodavanje kategorije
+  Future<void> addCategory(Category c) async {
+    final uid = await getCurrentUid();
+    await _userCol(uid, 'categories').add({
       'name': c.name,
       'iconCode': c.iconData.codePoint,
       'iconFont': c.iconData.fontFamily,
@@ -97,6 +112,7 @@ class FirestoreService {
     });
   }
 
+  // Čuvanje korisnika pri registraciji
   Future<void> createUserIfNotExists(User user) async {
     final docRef = _db.collection('users').doc(user.uid);
     final doc = await docRef.get();
@@ -110,32 +126,37 @@ class FirestoreService {
     }
   }
 
-  Future<void> deleteCategory(String id) {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    return _userCol(uid, 'categories').doc(id).delete();
+  // Brisanje kategorije
+  Future<void> deleteCategory(String id) async {
+    final uid = await getCurrentUid();
+    await _userCol(uid, 'categories').doc(id).delete();
   }
 
+  // Dohvatanje svih kategorija
   Future<List<Category>> getCategoriesOnce() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final uid = await getCurrentUid();
     final snap = await _userCol(uid, 'categories').get();
     return snap.docs.map((doc) => Category.fromFirestore(doc)).toList();
   }
 
-  Stream<List<Category>> watchCategories() {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    return _userCol(uid, 'categories').snapshots().map(
+  // Stream za kategorije
+  Stream<List<Category>> watchCategories() async* {
+    final uid = await getCurrentUid();
+    yield* _userCol(uid, 'categories').snapshots().map(
         (snap) => snap.docs.map((doc) => Category.fromFirestore(doc)).toList());
   }
 
+  // Čitanje svih incomes za carry-over
   Future<List<Expense>> getIncomes() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('incomes').get();
+    final uid = await getCurrentUid();
+    final snapshot = await _userCol(uid, 'incomes').get();
     return snapshot.docs.map((doc) => Expense.fromFirestore(doc)).toList();
   }
 
+  // Čitanje svih expenses za carry-over
   Future<List<Expense>> getExpenses() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('expenses').get();
+    final uid = await getCurrentUid();
+    final snapshot = await _userCol(uid, 'expenses').get();
     return snapshot.docs.map((doc) => Expense.fromFirestore(doc)).toList();
   }
 
@@ -145,6 +166,6 @@ class FirestoreService {
   }
 
   Future<void> deleteUserProfile(String uid) async {
-    await FirebaseFirestore.instance.collection('users').doc(uid).delete();
+    await _db.collection('users').doc(uid).delete();
   }
 }

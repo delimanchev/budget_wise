@@ -121,10 +121,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (ctx) => SimpleDialog(
         title: const Text('Select First Day of Week'),
-        children: days.map((d) => SimpleDialogOption(
-          child: Text(d),
-          onPressed: () => Navigator.pop(ctx, d),
-        )).toList(),
+        children: days
+            .map((d) => SimpleDialogOption(
+                  child: Text(d),
+                  onPressed: () => Navigator.pop(ctx, d),
+                ))
+            .toList(),
       ),
     );
     if (result != null) {
@@ -136,7 +138,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showDayOfMonthPicker() async {
     final result = await showDatePicker(
       context: context,
-      initialDate: DateTime(DateTime.now().year, DateTime.now().month, _firstDayOfMonth),
+      initialDate:
+          DateTime(DateTime.now().year, DateTime.now().month, _firstDayOfMonth),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
       helpText: 'Pick any date to use its day as first of month',
@@ -171,7 +174,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final value = double.tryParse(controller.text);
                 if (value != null) {
                   final now = DateTime.now();
-                  final daysInMonth = DateUtils.getDaysInMonth(now.year, now.month);
+                  final daysInMonth =
+                      DateUtils.getDaysInMonth(now.year, now.month);
                   setState(() {
                     _monthlyBudget = value;
                     _dailyBudget = value / daysInMonth;
@@ -196,11 +200,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final incomes = await FirestoreService.instance.getIncomes();
     final expenses = await FirestoreService.instance.getExpenses();
 
-    final prevIncomes = incomes.where((e) => e.date.year == prevMonth.year && e.date.month == prevMonth.month);
-    final prevExpenses = expenses.where((e) => e.date.year == prevMonth.year && e.date.month == prevMonth.month);
+    final prevIncomes = incomes.where((e) =>
+        e.date.year == prevMonth.year && e.date.month == prevMonth.month);
+    final prevExpenses = expenses.where((e) =>
+        e.date.year == prevMonth.year && e.date.month == prevMonth.month);
 
-    final balance = prevIncomes.fold(0.0, (s, e) => s + e.amount)
-                  - prevExpenses.fold(0.0, (s, e) => s + e.amount);
+    final balance = prevIncomes.fold(0.0, (s, e) => s + e.amount) -
+        prevExpenses.fold(0.0, (s, e) => s + e.amount);
 
     if (balance > 0) {
       final carry = Expense(
@@ -211,7 +217,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       await FirestoreService.instance.addIncome(carry);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Carried over €${balance.toStringAsFixed(2)} to ${DateFormat.yMMMM().format(thisMonth)}')),
+        SnackBar(
+            content: Text(
+                'Carried over €${balance.toStringAsFixed(2)} to ${DateFormat.yMMMM().format(thisMonth)}')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -251,26 +259,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (_carryOver) _applyCarryOver();
               }),
             ),
-
             _sectionHeader('GENERAL SETTINGS'),
-            _navItem(title: 'Language', value: _language, onTap: _showLanguagePicker),
-            _navItem(title: 'Currency', value: _currency, onTap: _showCurrencyPicker),
-            _navItem(title: 'First day of week', value: _firstDayOfWeek, onTap: _showDayOfWeekPicker),
-            _navItem(title: 'First day of month', value: _firstDayOfMonth.toString(), onTap: _showDayOfMonthPicker),
+            _navItem(
+                title: 'Language',
+                value: _language,
+                onTap: _showLanguagePicker),
+            _navItem(
+                title: 'Currency',
+                value: _currency,
+                onTap: _showCurrencyPicker),
+            _navItem(
+                title: 'First day of week',
+                value: _firstDayOfWeek,
+                onTap: _showDayOfWeekPicker),
+            _navItem(
+                title: 'First day of month',
+                value: _firstDayOfMonth.toString(),
+                onTap: _showDayOfMonthPicker),
             SwitchListTile(
               title: const Text('Passcode protection'),
               value: _passcodeProtection,
               onChanged: (v) => setState(() => _passcodeProtection = v),
             ),
-
             _sectionHeader('SYNCHRONIZATION'),
-            CheckboxListTile(title: const Text('Google Drive'), value: _syncGoogleDrive, onChanged: (v) => setState(() => _syncGoogleDrive = v!)),
-            CheckboxListTile(title: const Text('Dropbox'), value: _syncDropbox, onChanged: (v) => setState(() => _syncDropbox = v!)),
-
+            CheckboxListTile(
+                title: const Text('Google Drive'),
+                value: _syncGoogleDrive,
+                onChanged: (v) => setState(() => _syncGoogleDrive = v!)),
+            CheckboxListTile(
+                title: const Text('Dropbox'),
+                value: _syncDropbox,
+                onChanged: (v) => setState(() => _syncDropbox = v!)),
             _sectionHeader('DATA BACKUP'),
-            ListTile(leading: const Icon(Icons.cloud_upload_outlined), title: const Text('Create data backup'), onTap: () {}),
-            ListTile(leading: const Icon(Icons.cloud_download_outlined), title: const Text('Restore data'), onTap: () {}),
-            ListTile(leading: const Icon(Icons.delete_outline), title: const Text('Clear data'), onTap: () {}),
+            ListTile(
+                leading: const Icon(Icons.cloud_upload_outlined),
+                title: const Text('Create data backup'),
+                onTap: () {}),
+            ListTile(
+                leading: const Icon(Icons.cloud_download_outlined),
+                title: const Text('Restore data'),
+                onTap: () {}),
+            ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('Clear data'),
+                onTap: () {}),
             const SizedBox(height: 24),
           ],
         ),
@@ -284,11 +316,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       color: Colors.grey.shade200,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Text(title,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54)),
+          style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54)),
     );
   }
 
-  Widget _navItem({required String title, required String value, required VoidCallback onTap}) {
+  Widget _navItem(
+      {required String title,
+      required String value,
+      required VoidCallback onTap}) {
     return ListTile(
       title: Text(title),
       trailing: Row(mainAxisSize: MainAxisSize.min, children: [

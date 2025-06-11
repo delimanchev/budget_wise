@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_web_client_id" translatable="false">133939376227-4iegch3l47jqcb315a2hf8u7vc8lurn9.apps.googleusercontent.com</string>
+    <string name="gcm_defaultSenderId" translatable="false">133939376227</string>
+    <string name="google_api_key" translatable="false">AIzaSyCQyELjq2DNzwdIb36caKXVN9WVuA6Lhp8</string>
+    <string name="google_app_id" translatable="false">1:133939376227:android:ef92c61232062074528856</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyCQyELjq2DNzwdIb36caKXVN9WVuA6Lhp8</string>
+    <string name="google_storage_bucket" translatable="false">budget-wise-81413.firebasestorage.app</string>
+    <string name="project_id" translatable="false">budget-wise-81413</string>
+</resources>

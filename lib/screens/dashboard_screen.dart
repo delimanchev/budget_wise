@@ -27,10 +27,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    debugPrint('Initial pig state: $_pigState');
     _loadBudgetInfo();
     _preloadCategories();
-    FirestoreService.instance.getCategoriesOnce();
   }
 
   Future<void> _loadBudgetInfo() async {
@@ -100,64 +98,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         final cats =
             _allCategories.where((c) => c.isIncome == isIncome).toList();
+        if (cats.isNotEmpty) {
+          selectedCategory = cats.first.name;
+        }
 
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            left: 16,
-            right: 16,
-            top: 16,
-          ),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(
-              isIncome ? 'Add Income' : 'Add Expense',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        return StatefulBuilder(
+          builder: (context, setStateModal) => Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              left: 16,
+              right: 16,
+              top: 16,
             ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(labelText: 'Category'),
-              items: cats
-                  .map((c) => DropdownMenuItem(
-                        value: c.name,
-                        child: Text(c.name),
-                      ))
-                  .toList(),
-              onChanged: (v) => selectedCategory = v,
-            ),
-            TextField(
-              controller: amtCtrl,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Amount (€)'),
-            ),
-            TextField(
-              controller: descCtrl,
-              decoration: const InputDecoration(labelText: 'Description'),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                final amt = double.tryParse(amtCtrl.text);
-                if (amt != null && selectedCategory != null) {
-                  final entry = Expense(
-                    amount: amt,
-                    category: selectedCategory!,
-                    description: descCtrl.text,
-                    date: DateTime.now(),
-                  );
-                  Navigator.pop(ctx);
-                  if (isIncome) {
-                    FirestoreService.instance.addIncome(entry);
-                    _showAnimatedPig(PigState.happy);
-                  } else {
-                    FirestoreService.instance.addExpense(entry);
-                    _showAnimatedPig(PigState.sad);
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text(
+                isIncome ? 'Add Income' : 'Add Expense',
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(labelText: 'Category'),
+                value: selectedCategory,
+                items: cats
+                    .map((c) => DropdownMenuItem(
+                          value: c.name,
+                          child: Text(c.name),
+                        ))
+                    .toList(),
+                onChanged: (v) => setStateModal(() {
+                  selectedCategory = v;
+                }),
+              ),
+              TextField(
+                controller: amtCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Amount (€)'),
+              ),
+              TextField(
+                controller: descCtrl,
+                decoration: const InputDecoration(labelText: 'Description'),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  final amt = double.tryParse(amtCtrl.text);
+                  if (amt != null && selectedCategory != null) {
+                    final entry = Expense(
+                      amount: amt,
+                      category: selectedCategory!,
+                      description: descCtrl.text,
+                      date: DateTime.now(),
+                    );
+                    Navigator.pop(ctx);
+                    if (isIncome) {
+                      FirestoreService.instance.addIncome(entry);
+                      _showAnimatedPig(PigState.happy);
+                    } else {
+                      FirestoreService.instance.addExpense(entry);
+                      _showAnimatedPig(PigState.sad);
+                    }
                   }
-                  setState(() {});
-                }
-              },
-              child: const Text('Confirm'),
-            ),
-          ]),
+                },
+                child: const Text('Confirm'),
+              ),
+            ]),
+          ),
         );
       },
     );

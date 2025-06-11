@@ -14,7 +14,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.budget_wise"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -26,15 +26,17 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
-    }
+        jvmTarget = "11"    
+        }
 
     buildTypes {
         getByName("debug") {
             isDebuggable = true
         }
         getByName("release") {
-            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = false
+        isShrinkResources = false
+        signingConfig = signingConfigs.getByName("debug")
         }
     }
 }

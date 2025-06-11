@@ -19,7 +19,9 @@ allprojects {
     mavenCentral()
   }
 }
-apply plugin: 'com.google.gms.google-services'
+plugins {
+    id("com.google.gms.google-services")
+}
 // Optional: redirect build outputs
 //val newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get()
 //rootProject.layout.buildDirectory.set(newBuildDir)

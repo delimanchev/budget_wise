@@ -63,6 +63,7 @@ class BudgetWiseApp extends StatelessWidget {
 
   Future<void> _initializeAppLogic(User? user) async {
     if (user != null) {
+      await FirestoreService.instance.createUserIfNotExists(user);
       await FirestoreService.instance.getCategoriesOnce();
     }
   }
