@@ -45,7 +45,7 @@ BudgetWise je varna in prijazna Flutter aplikacija, ki omogoča uporabnikom popo
 ## 🧪 Namestitev aplikacije
 
 ```bash
-Instaliraj .apk file
+Instaliraj .apk file ki se nahaja v Releases
 ```
 ## 🧪 Namestitev in zagon (lokalno)
 
