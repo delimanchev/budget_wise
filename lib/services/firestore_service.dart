@@ -11,7 +11,6 @@ class FirestoreService {
 
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Helper koji uvek sigurno vrati UID (čeka da FirebaseAuth završi učitavanje)
   Future<String> getCurrentUid() async {
     var user = FirebaseAuth.instance.currentUser;
     if (user != null) return user.uid;
@@ -24,7 +23,6 @@ class FirestoreService {
   CollectionReference<Map<String, dynamic>> _userCol(String uid, String col) =>
       _db.collection('users').doc(uid).collection(col);
 
-  // Dodavanje Expense
   Future<void> addExpense(Expense e) async {
     final uid = await getCurrentUid();
     await _userCol(uid, 'expenses').add({
@@ -36,7 +34,6 @@ class FirestoreService {
     });
   }
 
-  // Praćenje Expense streama
   Stream<List<Expense>> watchExpenses() async* {
     final uid = await getCurrentUid();
     yield* _userCol(uid, 'expenses')
@@ -47,14 +44,15 @@ class FirestoreService {
               final d = doc.data();
               try {
                 return Expense(
-                  amount:
-                      double.parse(EncryptionService.decryptText(d['amount'])),
-                  category: EncryptionService.decryptText(d['category']),
-                  description: EncryptionService.decryptText(d['description']),
+                  amount: double.tryParse(
+                          EncryptionService.safeDecrypt(d['amount'])) ??
+                      0.0,
+                  category: EncryptionService.safeDecrypt(d['category']),
+                  description: EncryptionService.safeDecrypt(d['description']),
                   date: DateTime.parse(d['date'] as String),
                 );
               } catch (e) {
-                print('Greška prilikom dekripcije expense: $e');
+                print('Greška pri čitanju expenses: $e');
                 return null;
               }
             })
@@ -62,7 +60,6 @@ class FirestoreService {
             .toList());
   }
 
-  // Dodavanje Income
   Future<void> addIncome(Expense e) async {
     final uid = await getCurrentUid();
     await _userCol(uid, 'incomes').add({
@@ -74,7 +71,6 @@ class FirestoreService {
     });
   }
 
-  // Praćenje Income streama
   Stream<List<Expense>> watchIncomes() async* {
     final uid = await getCurrentUid();
     yield* _userCol(uid, 'incomes')
@@ -85,14 +81,15 @@ class FirestoreService {
               final d = doc.data();
               try {
                 return Expense(
-                  amount:
-                      double.parse(EncryptionService.decryptText(d['amount'])),
-                  category: EncryptionService.decryptText(d['category']),
-                  description: EncryptionService.decryptText(d['description']),
+                  amount: double.tryParse(
+                          EncryptionService.safeDecrypt(d['amount'])) ??
+                      0.0,
+                  category: EncryptionService.safeDecrypt(d['category']),
+                  description: EncryptionService.safeDecrypt(d['description']),
                   date: DateTime.parse(d['date'] as String),
                 );
               } catch (e) {
-                print('Greška prilikom dekripcije income: $e');
+                print('Greška pri čitanju incomes: $e');
                 return null;
               }
             })
@@ -100,7 +97,6 @@ class FirestoreService {
             .toList());
   }
 
-  // Dodavanje kategorije
   Future<void> addCategory(Category c) async {
     final uid = await getCurrentUid();
     await _userCol(uid, 'categories').add({
@@ -112,7 +108,6 @@ class FirestoreService {
     });
   }
 
-  // Čuvanje korisnika pri registraciji
   Future<void> createUserIfNotExists(User user) async {
     final docRef = _db.collection('users').doc(user.uid);
     final doc = await docRef.get();
@@ -126,38 +121,37 @@ class FirestoreService {
     }
   }
 
-  // Brisanje kategorije
   Future<void> deleteCategory(String id) async {
     final uid = await getCurrentUid();
     await _userCol(uid, 'categories').doc(id).delete();
   }
 
-  // Dohvatanje svih kategorija
   Future<List<Category>> getCategoriesOnce() async {
     final uid = await getCurrentUid();
     final snap = await _userCol(uid, 'categories').get();
     return snap.docs.map((doc) => Category.fromFirestore(doc)).toList();
   }
 
-  // Stream za kategorije
   Stream<List<Category>> watchCategories() async* {
     final uid = await getCurrentUid();
     yield* _userCol(uid, 'categories').snapshots().map(
         (snap) => snap.docs.map((doc) => Category.fromFirestore(doc)).toList());
   }
 
-  // Čitanje svih incomes za carry-over
   Future<List<Expense>> getIncomes() async {
     final uid = await getCurrentUid();
     final snapshot = await _userCol(uid, 'incomes').get();
-    return snapshot.docs.map((doc) => Expense.fromFirestore(doc)).toList();
+    return snapshot.docs
+        .map((doc) => Expense.fromEncryptedFirestore(doc))
+        .toList();
   }
 
-  // Čitanje svih expenses za carry-over
   Future<List<Expense>> getExpenses() async {
     final uid = await getCurrentUid();
     final snapshot = await _userCol(uid, 'expenses').get();
-    return snapshot.docs.map((doc) => Expense.fromFirestore(doc)).toList();
+    return snapshot.docs
+        .map((doc) => Expense.fromEncryptedFirestore(doc))
+        .toList();
   }
 
   Future<Map<String, dynamic>?> getUserProfile(String uid) async {

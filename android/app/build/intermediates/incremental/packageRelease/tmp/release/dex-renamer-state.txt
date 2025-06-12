@@ -1,4 +1,4 @@
-#Wed Jun 11 15:22:01 CEST 2025
+#Thu Jun 12 03:35:32 CEST 2025
 base.0=D\:\\Fakultet\\2 godina\\2 semestar kidamooooo\\Praktikum\\2\\budget_wise\\android\\app\\build\\intermediates\\dex\\release\\mergeDexRelease\\classes.dex
 base.1=D\:\\Fakultet\\2 godina\\2 semestar kidamooooo\\Praktikum\\2\\budget_wise\\android\\app\\build\\intermediates\\global_synthetics_dex\\release\\mergeReleaseGlobalSynthetics\\classes.dex
 base.2=D\:\\Fakultet\\2 godina\\2 semestar kidamooooo\\Praktikum\\2\\budget_wise\\android\\app\\build\\intermediates\\dex\\release\\mergeDexRelease\\classes2.dex

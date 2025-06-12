@@ -3,10 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../models/expense.dart';
+import '../providers/theme_provider.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({Key? key}) : super(key: key);
@@ -16,16 +19,25 @@ class AccountScreen extends StatefulWidget {
 }
 
 class _AccountScreenState extends State<AccountScreen> {
-  bool _darkTheme = false;
   String? _name;
   String? _surname;
   String? _workplace;
   DateTime? _dob;
+  String _currencySymbol = '€';
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadCurrency();
+  }
+
+  Future<void> _loadCurrency() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currency = prefs.getString('currency') ?? 'EUR';
+    setState(() {
+      _currencySymbol = currency == 'USD' ? '\$' : '€';
+    });
   }
 
   Future<void> _loadUserData() async {
@@ -205,13 +217,11 @@ class _AccountScreenState extends State<AccountScreen> {
             'Are you sure you want to permanently delete your account?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
-          ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete')),
         ],
       ),
     );
@@ -226,6 +236,7 @@ class _AccountScreenState extends State<AccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return StreamBuilder<User?>(
       stream: AuthService.instance.userChanges,
       builder: (ctx, authSnap) {
@@ -245,7 +256,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 : 'U';
 
         return Theme(
-          data: _darkTheme ? ThemeData.dark() : ThemeData.light(),
+          data: themeProvider.isDarkMode ? ThemeData.dark() : ThemeData.light(),
           child: ListView(
             padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
             children: [
@@ -333,7 +344,8 @@ class _AccountScreenState extends State<AccountScreen> {
                             leading: const Icon(Icons.arrow_circle_down,
                                 color: Colors.green),
                             title: const Text('Total Income'),
-                            trailing: Text('€${totalInc.toStringAsFixed(2)}'),
+                            trailing: Text(
+                                '$_currencySymbol${totalInc.toStringAsFixed(2)}'),
                           );
                         },
                       ),
@@ -347,51 +359,24 @@ class _AccountScreenState extends State<AccountScreen> {
                             leading: const Icon(Icons.arrow_circle_up,
                                 color: Colors.red),
                             title: const Text('Total Expenses'),
-                            trailing: Text('€${totalExp.toStringAsFixed(2)}'),
+                            trailing: Text(
+                                '$_currencySymbol${totalExp.toStringAsFixed(2)}'),
                           );
                         },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Preferences',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
-                      SwitchListTile(
-                        title: const Text('Dark Theme'),
-                        value: _darkTheme,
-                        onChanged: (v) => setState(() => _darkTheme = v),
                       ),
                       const Divider(),
-                      ListTile(
-                        leading: const Icon(Icons.info_outline),
-                        title: const Text('App Version'),
-                        trailing: const Text('1.0.0'),
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.copy_outlined),
-                        title: const Text('Copy User ID'),
-                        onTap: () {
-                          final uid = user.uid;
-                          Clipboard.setData(ClipboardData(text: uid));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('User ID copied')),
-                          );
+                      // ADDING DARK MODE SWITCH:
+                      SwitchListTile(
+                        title: const Text('Dark Mode'),
+                        value: themeProvider.isDarkMode,
+                        onChanged: (value) {
+                          themeProvider.toggleTheme(value);
                         },
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
             ],
           ),
         );

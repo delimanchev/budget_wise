@@ -11,13 +11,20 @@ import 'screens/category_screen.dart';
 import 'screens/expenses_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/account_screen.dart';
+import 'package:provider/provider.dart';
+import 'providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const BudgetWiseApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const BudgetWiseApp(),
+    ),
+  );
 }
 
 class BudgetWiseApp extends StatelessWidget {
@@ -25,38 +32,47 @@ class BudgetWiseApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'BudgetWise',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.light().copyWith(
-        scaffoldBackgroundColor: Colors.white,
-        primaryColor: Colors.lightBlueAccent,
-      ),
-      home: StreamBuilder(
-        stream: AuthService.instance.userChanges,
-        builder: (ctx, snap) {
-          if (snap.connectionState != ConnectionState.active) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          return FutureBuilder(
-            future: _initializeAppLogic(snap.data),
-            builder: (context, initSnap) {
-              if (initSnap.connectionState != ConnectionState.done) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          title: 'BudgetWise',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData.light().copyWith(
+            scaffoldBackgroundColor: Colors.white,
+            primaryColor: Colors.lightBlueAccent,
+          ),
+          darkTheme: ThemeData.dark(),
+          themeMode:
+              themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          home: StreamBuilder(
+            stream: AuthService.instance.userChanges,
+            builder: (ctx, snap) {
+              if (snap.connectionState != ConnectionState.active) {
                 return const Scaffold(
                   body: Center(child: CircularProgressIndicator()),
                 );
               }
-              return snap.hasData ? const RootScreen() : const LoginScreen();
+              return FutureBuilder(
+                future: _initializeAppLogic(snap.data),
+                builder: (context, initSnap) {
+                  if (initSnap.connectionState != ConnectionState.done) {
+                    return const Scaffold(
+                      body: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  return snap.hasData
+                      ? const RootScreen()
+                      : const LoginScreen();
+                },
+              );
             },
-          );
-        },
-      ),
-      routes: {
-        '/login': (_) => const LoginScreen(),
-        '/signup': (_) => const SignUpScreen(),
-        '/home': (_) => const RootScreen(),
+          ),
+          routes: {
+            '/login': (_) => const LoginScreen(),
+            '/signup': (_) => const SignUpScreen(),
+            '/home': (_) => const RootScreen(),
+          },
+        );
       },
     );
   }
@@ -110,7 +126,15 @@ class _RootScreenState extends State<RootScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => AuthService.instance.signOut(),
+            onPressed: () async {
+              await AuthService.instance.signOut();
+              if (!mounted) return;
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
+            },
           ),
         ],
       ),

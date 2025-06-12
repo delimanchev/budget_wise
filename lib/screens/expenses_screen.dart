@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/expense.dart';
 import '../services/firestore_service.dart';
 
@@ -23,8 +24,22 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   ExpenseFilter _selectedFilter = ExpenseFilter.all;
   DateTimeRange? _selectedInterval;
   DateTime? _selectedDate;
+  String _currencySymbol = '€';
 
-  /// Shows the bottom‐sheet for picking a filter
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrency();
+  }
+
+  Future<void> _loadCurrency() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currency = prefs.getString('currency') ?? 'EUR';
+    setState(() {
+      _currencySymbol = currency == 'USD' ? '\$' : '€';
+    });
+  }
+
   void _showFilterSheet() async {
     final choice = await showModalBottomSheet<ExpenseFilter>(
       context: context,
@@ -85,38 +100,43 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     final now = DateTime.now();
     switch (_selectedFilter) {
       case ExpenseFilter.day:
-        return all.where((e) =>
-          e.date.year == now.year &&
-          e.date.month == now.month &&
-          e.date.day == now.day
-        ).toList();
+        return all
+            .where((e) =>
+                e.date.year == now.year &&
+                e.date.month == now.month &&
+                e.date.day == now.day)
+            .toList();
       case ExpenseFilter.week:
         final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-        return all.where((e) =>
-          e.date.isAfter(startOfWeek.subtract(const Duration(seconds: 1))) &&
-          e.date.isBefore(now.add(const Duration(days: 1)))
-        ).toList();
+        return all
+            .where((e) =>
+                e.date.isAfter(
+                    startOfWeek.subtract(const Duration(seconds: 1))) &&
+                e.date.isBefore(now.add(const Duration(days: 1))))
+            .toList();
       case ExpenseFilter.month:
-        return all.where((e) =>
-          e.date.year == now.year && e.date.month == now.month
-        ).toList();
+        return all
+            .where((e) => e.date.year == now.year && e.date.month == now.month)
+            .toList();
       case ExpenseFilter.year:
-        return all.where((e) =>
-          e.date.year == now.year
-        ).toList();
+        return all.where((e) => e.date.year == now.year).toList();
       case ExpenseFilter.specificDate:
         if (_selectedDate == null) return all;
-        return all.where((e) =>
-          e.date.year == _selectedDate!.year &&
-          e.date.month == _selectedDate!.month &&
-          e.date.day == _selectedDate!.day
-        ).toList();
+        return all
+            .where((e) =>
+                e.date.year == _selectedDate!.year &&
+                e.date.month == _selectedDate!.month &&
+                e.date.day == _selectedDate!.day)
+            .toList();
       case ExpenseFilter.interval:
         if (_selectedInterval == null) return all;
-        return all.where((e) =>
-          e.date.isAfter(_selectedInterval!.start.subtract(const Duration(seconds: 1))) &&
-          e.date.isBefore(_selectedInterval!.end.add(const Duration(days: 1)))
-        ).toList();
+        return all
+            .where((e) =>
+                e.date.isAfter(_selectedInterval!.start
+                    .subtract(const Duration(seconds: 1))) &&
+                e.date.isBefore(
+                    _selectedInterval!.end.add(const Duration(days: 1))))
+            .toList();
       case ExpenseFilter.all:
       default:
         return all;
@@ -146,7 +166,6 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             ],
           ),
         ),
-
         Expanded(
           child: StreamBuilder<List<Expense>>(
             stream: FirestoreService.instance.watchExpenses(),
@@ -167,17 +186,13 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 itemBuilder: (context, i) {
                   final e = expenses[i];
                   return ListTile(
-                    leading: const Icon(
-                      Icons.arrow_circle_up,
-                      color: Colors.redAccent,
-                    ),
+                    leading: const Icon(Icons.arrow_circle_up,
+                        color: Colors.redAccent),
                     title: Text(
-                      '${e.category} — €${e.amount.toStringAsFixed(2)}',
-                    ),
+                        '${e.category} — $_currencySymbol${e.amount.toStringAsFixed(2)}'),
                     subtitle: Text(e.description),
-                    trailing: Text(
-                      '${e.date.day}.${e.date.month}.${e.date.year}',
-                    ),
+                    trailing:
+                        Text('${e.date.day}.${e.date.month}.${e.date.year}'),
                   );
                 },
               );

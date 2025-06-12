@@ -23,6 +23,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _budgetMode = false;
   double _dailyBudget = 0;
   List<Category> _allCategories = [];
+  String _currency = 'EUR';
 
   @override
   void initState() {
@@ -35,6 +36,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _budgetMode = prefs.getBool('budgetMode') ?? false;
+      _currency = prefs.getString('currency') ?? 'EUR';
       final monthly = prefs.getDouble('monthlyBudget') ?? 0;
       if (_budgetMode && monthly > 0) {
         final now = DateTime.now();
@@ -43,6 +45,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     });
   }
+
+  String _symbol() => _currency == 'USD' ? '\$' : '€';
 
   Future<void> _preloadCategories() async {
     final cats = await FirestoreService.instance.getCategoriesOnce();
@@ -88,82 +92,86 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _addTransaction({required bool isIncome}) {
+    final amtCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+
+    final cats = _allCategories.where((c) => c.isIncome == isIncome).toList();
+    String? selectedCategory = cats.isNotEmpty ? cats.first.name : null;
+
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (ctx) {
-        String? selectedCategory;
-        final amtCtrl = TextEditingController();
-        final descCtrl = TextEditingController();
-
-        final cats =
-            _allCategories.where((c) => c.isIncome == isIncome).toList();
-        if (cats.isNotEmpty) {
-          selectedCategory = cats.first.name;
-        }
-
         return StatefulBuilder(
-          builder: (context, setStateModal) => Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom,
-              left: 16,
-              right: 16,
-              top: 16,
-            ),
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Text(
-                isIncome ? 'Add Income' : 'Add Expense',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          builder: (context, setStateModal) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                left: 16,
+                right: 16,
+                top: 16,
               ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(labelText: 'Category'),
-                value: selectedCategory,
-                items: cats
-                    .map((c) => DropdownMenuItem(
-                          value: c.name,
-                          child: Text(c.name),
-                        ))
-                    .toList(),
-                onChanged: (v) => setStateModal(() {
-                  selectedCategory = v;
-                }),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    isIncome ? 'Add Income' : 'Add Expense',
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(labelText: 'Category'),
+                    value: selectedCategory,
+                    items: cats
+                        .map((c) => DropdownMenuItem(
+                              value: c.name,
+                              child: Text(c.name),
+                            ))
+                        .toList(),
+                    onChanged: (v) {
+                      setStateModal(() {
+                        selectedCategory = v;
+                      });
+                    },
+                  ),
+                  TextField(
+                    controller: amtCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration:
+                        InputDecoration(labelText: 'Amount (${_symbol()})'),
+                  ),
+                  TextField(
+                    controller: descCtrl,
+                    decoration: const InputDecoration(labelText: 'Description'),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      final amt = double.tryParse(amtCtrl.text);
+                      if (amt != null && selectedCategory != null) {
+                        final entry = Expense(
+                          amount: amt,
+                          category: selectedCategory!,
+                          description: descCtrl.text,
+                          date: DateTime.now(),
+                        );
+                        Navigator.pop(ctx);
+                        if (isIncome) {
+                          FirestoreService.instance.addIncome(entry);
+                          _showAnimatedPig(PigState.happy);
+                        } else {
+                          FirestoreService.instance.addExpense(entry);
+                          _showAnimatedPig(PigState.sad);
+                        }
+                      }
+                    },
+                    child: const Text('Confirm'),
+                  ),
+                ],
               ),
-              TextField(
-                controller: amtCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Amount (€)'),
-              ),
-              TextField(
-                controller: descCtrl,
-                decoration: const InputDecoration(labelText: 'Description'),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  final amt = double.tryParse(amtCtrl.text);
-                  if (amt != null && selectedCategory != null) {
-                    final entry = Expense(
-                      amount: amt,
-                      category: selectedCategory!,
-                      description: descCtrl.text,
-                      date: DateTime.now(),
-                    );
-                    Navigator.pop(ctx);
-                    if (isIncome) {
-                      FirestoreService.instance.addIncome(entry);
-                      _showAnimatedPig(PigState.happy);
-                    } else {
-                      FirestoreService.instance.addExpense(entry);
-                      _showAnimatedPig(PigState.sad);
-                    }
-                  }
-                },
-                child: const Text('Confirm'),
-              ),
-            ]),
-          ),
+            );
+          },
         );
       },
     );
@@ -272,7 +280,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const SizedBox(height: 4),
                           Text(cat.name,
                               style: TextStyle(fontSize: 12, color: color)),
-                          Text('€${value.toStringAsFixed(2)}',
+                          Text('${_symbol()}${value.toStringAsFixed(2)}',
                               style: TextStyle(fontSize: 12, color: color)),
                         ],
                       ));
@@ -284,7 +292,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Column(
                           children: [
                             Text(
-                              'Balance: €${balance.toStringAsFixed(2)}',
+                              'Balance: ${_symbol()}${balance.toStringAsFixed(2)}',
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
@@ -295,7 +303,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(top: 6),
                                 child: Text(
-                                  'Budget: €${_dailyBudget.toStringAsFixed(2)} / day',
+                                  'Budget: ${_symbol()}${_dailyBudget.toStringAsFixed(2)} / day',
                                   style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500),
@@ -367,11 +375,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                            'Income this month: €${totalInc.toStringAsFixed(2)}',
+                            'Income this month: ${_symbol()}${totalInc.toStringAsFixed(2)}',
                             style: const TextStyle(
                                 fontSize: 16, color: Colors.green)),
                         Text(
-                            'Expenses this month: €${totalExp.toStringAsFixed(2)}',
+                            'Expenses this month: ${_symbol()}${totalExp.toStringAsFixed(2)}',
                             style: const TextStyle(
                                 fontSize: 16, color: Colors.red)),
                       ]),

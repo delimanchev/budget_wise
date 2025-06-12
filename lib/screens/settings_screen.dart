@@ -16,35 +16,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _carryOver = false;
   double _monthlyBudget = 0;
   double _dailyBudget = 0;
-
-  bool _darkTheme = false;
   String _language = 'English';
   String _currency = 'EUR';
-  String _firstDayOfWeek = 'Sun';
-  int _firstDayOfMonth = 1;
-  bool _passcodeProtection = false;
-
-  bool _syncGoogleDrive = false;
-  bool _syncDropbox = false;
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
-  }
-
-  Future<void> _saveAllSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('budgetMode', _budgetMode);
-    await prefs.setDouble('monthlyBudget', _monthlyBudget);
-    await prefs.setString('language', _language);
-    await prefs.setString('currency', _currency);
-    await prefs.setString('firstDayOfWeek', _firstDayOfWeek);
-    await prefs.setInt('firstDayOfMonth', _firstDayOfMonth);
-    await prefs.setBool('darkTheme', _darkTheme);
-    await prefs.setBool('passcodeProtection', _passcodeProtection);
-    await prefs.setBool('syncGoogleDrive', _syncGoogleDrive);
-    await prefs.setBool('syncDropbox', _syncDropbox);
   }
 
   Future<void> _loadSettings() async {
@@ -54,12 +32,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _monthlyBudget = prefs.getDouble('monthlyBudget') ?? 0;
       _language = prefs.getString('language') ?? 'English';
       _currency = prefs.getString('currency') ?? 'EUR';
-      _firstDayOfWeek = prefs.getString('firstDayOfWeek') ?? 'Sun';
-      _firstDayOfMonth = prefs.getInt('firstDayOfMonth') ?? 1;
-      _darkTheme = prefs.getBool('darkTheme') ?? false;
-      _passcodeProtection = prefs.getBool('passcodeProtection') ?? false;
-      _syncGoogleDrive = prefs.getBool('syncGoogleDrive') ?? false;
-      _syncDropbox = prefs.getBool('syncDropbox') ?? false;
 
       if (_budgetMode && _monthlyBudget > 0) {
         final now = DateTime.now();
@@ -67,6 +39,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _dailyBudget = _monthlyBudget / days;
       }
     });
+  }
+
+  Future<void> _saveSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('budgetMode', _budgetMode);
+    await prefs.setDouble('monthlyBudget', _monthlyBudget);
+    await prefs.setString('language', _language);
+    await prefs.setString('currency', _currency);
   }
 
   void _showLanguagePicker() async {
@@ -87,8 +67,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
     if (result != null) {
-      setState(() => _language = result);
-      _saveAllSettings();
+      setState(() {
+        _language = result;
+      });
+      _saveSettings();
     }
   }
 
@@ -110,50 +92,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
     if (result != null) {
-      setState(() => _currency = result);
-      _saveAllSettings();
+      setState(() {
+        _currency = result;
+      });
+      _saveSettings();
     }
-  }
-
-  void _showDayOfWeekPicker() async {
-    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: const Text('Select First Day of Week'),
-        children: days
-            .map((d) => SimpleDialogOption(
-                  child: Text(d),
-                  onPressed: () => Navigator.pop(ctx, d),
-                ))
-            .toList(),
-      ),
-    );
-    if (result != null) {
-      setState(() => _firstDayOfWeek = result);
-      _saveAllSettings();
-    }
-  }
-
-  void _showDayOfMonthPicker() async {
-    final result = await showDatePicker(
-      context: context,
-      initialDate:
-          DateTime(DateTime.now().year, DateTime.now().month, _firstDayOfMonth),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-      helpText: 'Pick any date to use its day as first of month',
-    );
-    if (result != null) {
-      setState(() => _firstDayOfMonth = result.day);
-      _saveAllSettings();
-    }
-  }
-
-  Future<void> _saveBudgetSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('budgetMode', _budgetMode);
-    await prefs.setDouble('monthlyBudget', _monthlyBudget);
   }
 
   void _showBudgetInputDialog() {
@@ -166,21 +109,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           content: TextField(
             controller: controller,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: '€'),
+            decoration: const InputDecoration(labelText: 'Amount'),
           ),
           actions: [
             TextButton(
-              onPressed: () async {
+              onPressed: () {
                 final value = double.tryParse(controller.text);
                 if (value != null) {
                   final now = DateTime.now();
-                  final daysInMonth =
-                      DateUtils.getDaysInMonth(now.year, now.month);
+                  final days = DateUtils.getDaysInMonth(now.year, now.month);
                   setState(() {
                     _monthlyBudget = value;
-                    _dailyBudget = value / daysInMonth;
+                    _dailyBudget = value / days;
                   });
-                  await _saveBudgetSettings();
+                  _saveSettings();
                 }
                 Navigator.pop(ctx);
               },
@@ -219,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(
-                'Carried over €${balance.toStringAsFixed(2)} to ${DateFormat.yMMMM().format(thisMonth)}')),
+                'Carried over ${_currencySymbol()}${balance.toStringAsFixed(2)} to ${DateFormat.yMMMM().format(thisMonth)}')),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -228,84 +170,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  String _currencySymbol() {
+    return _currency == 'USD' ? '\$' : '€';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = _darkTheme ? ThemeData.dark() : ThemeData.light();
-
-    return Theme(
-      data: theme,
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Settings')),
-        body: ListView(
-          children: [
-            _sectionHeader('BALANCE'),
-            CheckboxListTile(
-              title: const Text('Budget mode'),
-              value: _budgetMode,
-              onChanged: (v) => setState(() {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Settings')),
+      body: ListView(
+        children: [
+          _sectionHeader('BALANCE'),
+          CheckboxListTile(
+            title: const Text('Budget mode'),
+            value: _budgetMode,
+            onChanged: (v) {
+              setState(() {
                 _budgetMode = v!;
-                _saveBudgetSettings();
-                if (_budgetMode) _showBudgetInputDialog();
-              }),
-              subtitle: _budgetMode && _dailyBudget > 0
-                  ? Text('Budget: €${_dailyBudget.toStringAsFixed(2)} / day')
-                  : null,
-            ),
-            CheckboxListTile(
-              title: const Text('Carry over'),
-              value: _carryOver,
-              onChanged: (v) => setState(() {
+              });
+              _saveSettings();
+              if (_budgetMode) _showBudgetInputDialog();
+            },
+            subtitle: _budgetMode && _dailyBudget > 0
+                ? Text(
+                    'Budget: ${_currencySymbol()}${_dailyBudget.toStringAsFixed(2)} / day')
+                : null,
+          ),
+          CheckboxListTile(
+            title: const Text('Carry over'),
+            value: _carryOver,
+            onChanged: (v) {
+              setState(() {
                 _carryOver = v!;
                 if (_carryOver) _applyCarryOver();
-              }),
-            ),
-            _sectionHeader('GENERAL SETTINGS'),
-            _navItem(
-                title: 'Language',
-                value: _language,
-                onTap: _showLanguagePicker),
-            _navItem(
-                title: 'Currency',
-                value: _currency,
-                onTap: _showCurrencyPicker),
-            _navItem(
-                title: 'First day of week',
-                value: _firstDayOfWeek,
-                onTap: _showDayOfWeekPicker),
-            _navItem(
-                title: 'First day of month',
-                value: _firstDayOfMonth.toString(),
-                onTap: _showDayOfMonthPicker),
-            SwitchListTile(
-              title: const Text('Passcode protection'),
-              value: _passcodeProtection,
-              onChanged: (v) => setState(() => _passcodeProtection = v),
-            ),
-            _sectionHeader('SYNCHRONIZATION'),
-            CheckboxListTile(
-                title: const Text('Google Drive'),
-                value: _syncGoogleDrive,
-                onChanged: (v) => setState(() => _syncGoogleDrive = v!)),
-            CheckboxListTile(
-                title: const Text('Dropbox'),
-                value: _syncDropbox,
-                onChanged: (v) => setState(() => _syncDropbox = v!)),
-            _sectionHeader('DATA BACKUP'),
-            ListTile(
-                leading: const Icon(Icons.cloud_upload_outlined),
-                title: const Text('Create data backup'),
-                onTap: () {}),
-            ListTile(
-                leading: const Icon(Icons.cloud_download_outlined),
-                title: const Text('Restore data'),
-                onTap: () {}),
-            ListTile(
-                leading: const Icon(Icons.delete_outline),
-                title: const Text('Clear data'),
-                onTap: () {}),
-            const SizedBox(height: 24),
-          ],
-        ),
+              });
+            },
+          ),
+          _sectionHeader('GENERAL SETTINGS'),
+          _navItem(
+            title: 'Language',
+            value: _language,
+            onTap: _showLanguagePicker,
+          ),
+          _navItem(
+            title: 'Currency',
+            value: _currency,
+            onTap: _showCurrencyPicker,
+          ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
@@ -315,11 +228,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       width: double.infinity,
       color: Colors.grey.shade200,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Text(title,
-          style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.black54)),
+      child: Text(
+        title,
+        style: const TextStyle(
+            fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54),
+      ),
     );
   }
 

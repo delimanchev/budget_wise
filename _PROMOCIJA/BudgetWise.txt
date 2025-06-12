@@ -1,0 +1,20 @@
+Budget Wise
+
+BudgetWise je aplikacija, namenjena osebnemu finančnemu planiranju in upravljanju proračuna, s poudarkom na enostavnosti uporabe, preglednosti ter varnosti shranjenih podatkov.
+
+Leto izdelave: 2025
+
+Avtor1 Andrej Delimanchev
+Avtor2 Aleksa Vucinic
+Avtor3 Luka Kitanovski
+
+Domača stran: https://url.si/
+Vir podatkov: https://url.si/
+...
+Koda: https://github.com/delimanchev/budget_wise
+
+Kategorizacija: mobilna aplikacija
+
+Oznake: GitHub
+
+BudgetWise je zasnovan kot intuitivno in varno orodje za vsakodnevno finančno upravljanje. Uporabniku omogoča enostavno dodajanje prihodkov in odhodkov, določanje mesečnega proračuna ter spremljanje finančne discipline skozi analitične prikaze in grafe. Poleg osnovnih funkcionalnosti vključuje napredno funkcionalnost enkripcije občutljivih podatkov, kar zagotavlja varno hrambo finančnih informacij v oblaku. Podatki so shranjeni v Firebase Cloud Firestore, pri čemer je del občutljivih podatkov dodatno šifriran z AES enkripcijo. Projekt temelji na sodobnih tehnologijah.

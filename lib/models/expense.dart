@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/encryption_service.dart';
 
 class Expense {
   final double amount;
@@ -29,6 +30,17 @@ class Expense {
       category: data['category'] ?? '',
       description: data['description'] ?? '',
       date: (data['date'] as Timestamp).toDate(),
+    );
+  }
+
+  factory Expense.fromEncryptedFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Expense(
+      amount:
+          double.tryParse(EncryptionService.safeDecrypt(data['amount'])) ?? 0.0,
+      category: EncryptionService.safeDecrypt(data['category']),
+      description: EncryptionService.safeDecrypt(data['description']),
+      date: DateTime.parse(data['date']),
     );
   }
 }
